@@ -339,6 +339,11 @@ def configurar_pagina():
         border: 2px solid #003F88 !important;
         border-radius: 6px !important;
     }
+     /* FORÇA TEXTO BRANCO EM TODOS OS BOTÕES E SEUS FILHOS */
+    .stButton > button,
+    .stButton > button * {
+        color: #FFFFFF !important;
+    }
 
     </style>
     """,
