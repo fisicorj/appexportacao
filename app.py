@@ -275,70 +275,76 @@ def configurar_pagina():
     st.title("Gerador de Relatórios TIC → Tabelas em Word")
     
     st.markdown(
-        """
-        <style>
-        /* v2.0 - Correção de cores dos botões */
-        .stApp {
-            background-color: #E6F0FA !important;
-        }
-        h1, h2, h3, h4 {
-            color: #003F88 !important;
-            font-weight: 700 !important;
-        }
-        p, label, span {
-            color: #1C1C1C !important;
-        }
-        .stFileUploader label {
-            color: #003F88 !important;
-            font-weight: 600 !important;
-        }
-        
-        /* Botões - Estado normal: Azul com texto branco */
-        .stButton > button[kind="primary"],
-        .stButton > button[kind="secondary"],
-        .stButton > button {
-            background-color: #003F88 !important;
-            color: #FFFFFF !important;
-            border-radius: 8px !important;
-            padding: 0.6rem 1.2rem !important;
-            font-weight: 600 !important;
-            border: 2px solid #003F88 !important;
-            transition: all 0.3s ease !important;
-        }
-        
-        /* Botões - Hover: Laranja com texto preto */
-        .stButton > button[kind="primary"]:hover,
-        .stButton > button[kind="secondary"]:hover,
-        .stButton > button:hover {
-            background-color: #F28C28 !important;
-            border-color: #F28C28 !important;
-            color: #1C1C1C !important;
-        }
-        
-        /* Botões - Active/Focus: Laranja com texto preto */
-        .stButton > button[kind="primary"]:active,
-        .stButton > button[kind="secondary"]:active,
-        .stButton > button:active,
-        .stButton > button[kind="primary"]:focus,
-        .stButton > button[kind="secondary"]:focus,
-        .stButton > button:focus {
-            background-color: #F28C28 !important;
-            border-color: #F28C28 !important;
-            color: #1C1C1C !important;
-        }
-        
-        input[type="text"] {
-            border: 2px solid #003F88 !important;
-            border-radius: 6px !important;
-        }
-        .stMultiSelect > div {
-            border: 2px solid #003F88 !important;
-            border-radius: 6px !important;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+    """
+    <style>
+    
+    .stApp {
+        background-color: #E6F0FA !important;
+    }
+
+    h1, h2, h3, h4 {
+        color: #003F88 !important;
+        font-weight: 700 !important;
+    }
+
+    p, label, span {
+        color: #1C1C1C !important;
+    }
+
+    .stFileUploader label {
+        color: #003F88 !important;
+        font-weight: 600 !important;
+    }
+
+    /* ------------------------------
+       🔵 Botões Azul (normal)
+       ------------------------------ */
+    .stButton > button {
+        background-color: #003F88 !important;
+        color: white !important;
+        border-radius: 8px !important;
+        padding: 0.6rem 1.2rem !important;
+        font-weight: 600 !important;
+        border: 2px solid #003F88 !important;
+        transition: all 0.3s ease !important;
+    }
+
+    /* ------------------------------
+       🟠 Botões em hover (laranja)
+       ------------------------------ */
+    .stButton > button:hover {
+        background-color: #F28C28 !important;
+        border-color: #F28C28 !important;
+        color: white !important; /* <=== FORÇANDO TEXTO BRANCO NO HOVER */
+    }
+
+    /* ------------------------------
+       🟠 Botões ativos/focados
+       ------------------------------ */
+    .stButton > button:active,
+    .stButton > button:focus {
+        background-color: #F28C28 !important;
+        border-color: #F28C28 !important;
+        color: white !important; /* <=== TAMBÉM BRANCO AQUI */
+    }
+
+    /* Caixas de texto */
+    input[type="text"] {
+        border: 2px solid #003F88 !important;
+        border-radius: 6px !important;
+    }
+
+    /* Multiselect */
+    .stMultiSelect > div {
+        border: 2px solid #003F88 !important;
+        border-radius: 6px !important;
+    }
+
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 
 
 @st.cache_resource
