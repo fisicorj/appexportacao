@@ -15,6 +15,74 @@ from docx.oxml.ns import qn
 
 
 st.set_page_config(page_title="Gerador de Relatórios", layout="wide")
+# ==========================
+# 🎨 CSS CUSTOMIZADO – Azul + Laranja
+# ==========================
+st.markdown(
+    """
+    <style>
+
+    /* ----- Fundo da página ----- */
+    .stApp {
+        background-color: #E6F0FA !important;
+    }
+
+    /* ----- Títulos ----- */
+    h1, h2, h3, h4 {
+        color: #003F88 !important;
+        font-weight: 700 !important;
+    }
+
+    /* ----- Texto normal ----- */
+    p, label, span {
+        color: #1C1C1C !important;
+    }
+
+    /* ----- Upload de arquivos ----- */
+    .stFileUploader label {
+        color: #003F88 !important;
+        font-weight: 600 !important;
+    }
+
+    /* ----- Botão padrão do Streamlit ----- */
+    .stButton > button {
+        background-color: #003F88 !important;
+        color: white !important;
+        border-radius: 8px !important;
+        padding: 0.6rem 1.2rem !important;
+        font-weight: 600 !important;
+        border: 2px solid #003F88 !important;
+    }
+
+    /* ----- Botão ao passar o mouse ----- */
+    .stButton > button:hover {
+        background-color: #F28C28 !important;
+        border-color: #F28C28 !important;
+        color: white !important;
+    }
+
+    /* ----- Caixa de texto (input) ----- */
+    input[type="text"] {
+        border: 2px solid #003F88 !important;
+        border-radius: 6px !important;
+    }
+
+    /* ----- Multiselect ----- */
+    .stMultiSelect > div {
+        border: 2px solid #003F88 !important;
+        border-radius: 6px !important;
+    }
+
+    /* ----- Barra lateral (se usar) ----- */
+    .css-1d391kg {
+        background-color: #003F88 !important;
+    }
+
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 st.title("Gerador de Relatórios → Tabelas em Word")
 
 
