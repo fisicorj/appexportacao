@@ -89,6 +89,18 @@ class HistoricoRepository:
             logger.error(f"Erro ao obter histórico: {e}")
             return pd.DataFrame()
     
+    def limpar_historico(self) -> bool:
+        """Limpa todo o histórico. Retorna True se bem-sucedido."""
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("DELETE FROM historico")
+            self.conn.commit()
+            logger.info("Histórico limpo com sucesso")
+            return True
+        except Exception as e:
+            logger.error(f"Erro ao limpar histórico: {e}")
+            return False
+    
     def fechar(self):
         """Fecha a conexão com o banco."""
         if self.conn:
@@ -444,16 +456,28 @@ def main():
         if df_hist.empty:
             st.info("Ainda não há registros no histórico.")
         else:
-            st.dataframe(df_hist, use_container_width=True)
+            # Criar colunas para botões
+            col1, col2 = st.columns([1, 5])
             
-            # Botão para exportar histórico
-            csv = df_hist.to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label="📊 Exportar histórico como CSV",
-                data=csv,
-                file_name=f"historico_relatorios_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                mime="text/csv"
-            )
+            with col1:
+                if st.button("🗑️ Limpar histórico", type="secondary"):
+                    if historico.limpar_historico():
+                        st.success("✅ Histórico limpo com sucesso!")
+                        st.rerun()
+                    else:
+                        st.error("❌ Erro ao limpar histórico")
+            
+            with col2:
+                # Botão para exportar histórico
+                csv = df_hist.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label="📊 Exportar histórico como CSV",
+                    data=csv,
+                    file_name=f"historico_relatorios_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                    mime="text/csv"
+                )
+            
+            st.dataframe(df_hist, use_container_width=True)
 
 
 if __name__ == "__main__":
