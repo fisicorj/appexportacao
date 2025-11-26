@@ -315,7 +315,7 @@ def configurar_pagina():
     .stButton > button:hover {
         background-color: #F28C28 !important;
         border-color: #F28C28 !important;
-        color: white !important; /* <=== FORÇANDO TEXTO BRANCO NO HOVER */
+        color: white !important;
     }
 
     /* ------------------------------
@@ -325,7 +325,7 @@ def configurar_pagina():
     .stButton > button:focus {
         background-color: #F28C28 !important;
         border-color: #F28C28 !important;
-        color: white !important; /* <=== TAMBÉM BRANCO AQUI */
+        color: white !important;
     }
 
     /* Caixas de texto */
@@ -339,7 +339,8 @@ def configurar_pagina():
         border: 2px solid #003F88 !important;
         border-radius: 6px !important;
     }
-     /* FORÇA TEXTO BRANCO EM TODOS OS BOTÕES E SEUS FILHOS */
+
+    /* FORÇA TEXTO BRANCO EM TODOS OS BOTÕES E SEUS FILHOS */
     .stButton > button,
     .stButton > button * {
         color: #FFFFFF !important;
@@ -349,7 +350,6 @@ def configurar_pagina():
     """,
     unsafe_allow_html=True
 )
-
 
 
 @st.cache_resource
@@ -363,6 +363,18 @@ def carregar_excel(_uploaded_file) -> pd.ExcelFile:
 # ==========================
 def main():
     configurar_pagina()
+    
+    # 🔁 Gatilho de reset pós-download
+    if "resetar_app" not in st.session_state:
+        st.session_state["resetar_app"] = False
+
+    if st.session_state["resetar_app"]:
+        # limpa tudo que é de estado de usuário e reroda
+        for k in list(st.session_state.keys()):
+            if k != "resetar_app":
+                del st.session_state[k]
+        st.session_state["resetar_app"] = False
+        st.rerun()
     
     # Inicializar repositório de histórico
     historico = HistoricoRepository()
@@ -461,12 +473,17 @@ def main():
                         if erros:
                             st.warning(f"⚠️ {len(erros)} aba(s) não puderam ser processadas: {', '.join(erros)}")
                         
-                        st.download_button(
+                        clicked = st.download_button(
                             label="📥 Baixar ZIP com relatórios",
                             data=zip_buffer,
                             file_name=nome_zip,
                             mime="application/zip"
                         )
+
+                        # Após o download, resetar app
+                        if clicked:
+                            st.session_state["resetar_app"] = True
+                            st.rerun()
                     else:
                         st.error("❌ Nenhum relatório pôde ser gerado. Verifique a estrutura das abas.")
                         if erros:
