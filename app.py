@@ -471,7 +471,7 @@ def main():
                         # Após download, limpamos o estado e rerodamos o app
                         if clicked:
                             st.session_state.clear()
-                            st.experimental_rerun()
+                            st.rerun()
                     else:
                         st.error("❌ Nenhum relatório pôde ser gerado. Verifique a estrutura das abas.")
                         if erros:
@@ -502,7 +502,7 @@ def main():
                 if st.button("🗑️ Limpar histórico", type="secondary"):
                     if historico.limpar_historico():
                         st.success("✅ Histórico limpo com sucesso!")
-                        st.experimental_rerun()
+                        st.rerun()
                     else:
                         st.error("❌ Erro ao limpar histórico")
             
