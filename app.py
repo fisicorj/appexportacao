@@ -120,7 +120,7 @@ def validar_nome_trilha(nome: str) -> Tuple[bool, str]:
         return False, "O nome da trilha deve ter pelo menos 3 caracteres."
     
     # Caracteres inválidos para nomes de arquivo
-    if re.search(r'[<>:"/\\|?*]', nome):
+    if re.search(r'[<>:\"/\\\\|?*]', nome):
         return False, "O nome contém caracteres inválidos (< > : \" / \\ | ? *)."
     
     return True, ""
@@ -352,9 +352,9 @@ def configurar_pagina():
 )
 
 
-@st.cache_resource
 def carregar_excel(_uploaded_file) -> pd.ExcelFile:
-    """Carrega o arquivo Excel com cache."""
+    """Carrega o arquivo Excel SEM cache (para evitar reaproveitar o primeiro arquivo)."""
+    logger.info(f"Carregando Excel: {getattr(_uploaded_file, 'name', 'sem_nome')}")
     return pd.ExcelFile(_uploaded_file)
 
 
@@ -383,7 +383,7 @@ def main():
         )
 
         try:
-            # Carregar Excel com cache
+            # Carregar Excel SEM cache, sempre o arquivo atual
             xls = carregar_excel(uploaded_file)
             abas_numericas = [a for a in xls.sheet_names if aba_e_numerica(a)]
 
