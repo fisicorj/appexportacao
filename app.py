@@ -4,6 +4,8 @@ import numpy as np
 import re
 import io
 import zipfile
+import sqlite3
+from datetime import datetime
 
 from docx import Document
 from docx.enum.section import WD_ORIENT
@@ -14,37 +16,37 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
 
-st.set_page_config(page_title="Gerador de Relatórios", layout="wide")
 # ==========================
-# 🎨 CSS CUSTOMIZADO – Azul + Laranja
+# Configuração da página
+# ==========================
+st.set_page_config(page_title="Gerador de Relatórios TIC", layout="wide")
+st.title("Gerador de Relatórios TIC → Tabelas em Word")
+
+# ==========================
+# CSS CUSTOMIZADO – Azul + Laranja
 # ==========================
 st.markdown(
     """
     <style>
 
-    /* ----- Fundo da página ----- */
     .stApp {
         background-color: #E6F0FA !important;
     }
 
-    /* ----- Títulos ----- */
     h1, h2, h3, h4 {
         color: #003F88 !important;
         font-weight: 700 !important;
     }
 
-    /* ----- Texto normal ----- */
     p, label, span {
         color: #1C1C1C !important;
     }
 
-    /* ----- Upload de arquivos ----- */
     .stFileUploader label {
         color: #003F88 !important;
         font-weight: 600 !important;
     }
 
-    /* ----- Botão padrão do Streamlit ----- */
     .stButton > button {
         background-color: #003F88 !important;
         color: white !important;
@@ -54,28 +56,20 @@ st.markdown(
         border: 2px solid #003F88 !important;
     }
 
-    /* ----- Botão ao passar o mouse ----- */
     .stButton > button:hover {
         background-color: #F28C28 !important;
         border-color: #F28C28 !important;
         color: white !important;
     }
 
-    /* ----- Caixa de texto (input) ----- */
     input[type="text"] {
         border: 2px solid #003F88 !important;
         border-radius: 6px !important;
     }
 
-    /* ----- Multiselect ----- */
     .stMultiSelect > div {
         border: 2px solid #003F88 !important;
         border-radius: 6px !important;
-    }
-
-    /* ----- Barra lateral (se usar) ----- */
-    .css-1d391kg {
-        background-color: #003F88 !important;
     }
 
     </style>
@@ -83,11 +77,41 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.title("Gerador de Relatórios → Tabelas em Word")
+# ==========================
+# Banco de dados para histórico
+# ==========================
+conn = sqlite3.connect("historico_relatorios.db", check_same_thread=False)
+cursor = conn.cursor()
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS historico (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    data_hora TEXT,
+    nome_trilha TEXT,
+    nome_arquivo_xlsx TEXT,
+    abas_selecionadas TEXT,
+    qtd_relatorios INTEGER
+)
+""")
+conn.commit()
 
 
-# ==== Funções auxiliares ==== #
+def registrar_historico(nome_trilha, nome_arquivo_xlsx, abas, qtd_relatorios):
+    data_hora = datetime.now().isoformat(timespec="seconds")
+    abas_str = ", ".join(abas)
+    cursor.execute(
+        """
+        INSERT INTO historico (data_hora, nome_trilha, nome_arquivo_xlsx, abas_selecionadas, qtd_relatorios)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (data_hora, nome_trilha, nome_arquivo_xlsx, abas_str, qtd_relatorios)
+    )
+    conn.commit()
 
+
+# ==========================
+# Funções auxiliares de negócio
+# ==========================
 def aba_e_numerica(nome: str) -> bool:
     return re.match(r"^\d", str(nome).strip()) is not None
 
@@ -105,7 +129,7 @@ def formatar_celula(celula, bold=False, branca=False):
 
 def pintar_fundo(celula, rgb=(0, 0, 0)):
     """Aplica cor de fundo (w:shd) na célula."""
-    cor = "%02X%02X%02X" % rgb  
+    cor = "%02X%02X%02X" % rgb  # (0,0,0) -> "000000"
 
     tc = celula._tc
     tcPr = tc.get_or_add_tcPr()
@@ -120,7 +144,8 @@ def pintar_fundo(celula, rgb=(0, 0, 0)):
     shd.set(qn("w:fill"), cor)
 
 
-def gerar_doc_para_aba(xls, aba_nome: str) -> bytes:
+def gerar_doc_para_aba(xls, aba_nome: str) -> bytes | None:
+    """Gera o DOCX (em bytes) para uma aba específica."""
     df = pd.read_excel(xls, sheet_name=aba_nome, header=None)
 
     header = df.iloc[1]
@@ -138,7 +163,7 @@ def gerar_doc_para_aba(xls, aba_nome: str) -> bytes:
     if dados.empty:
         return None
 
-    # Documento paisagem
+    # Documento em paisagem
     doc = Document()
     section = doc.sections[0]
     section.orientation = WD_ORIENT.LANDSCAPE
@@ -161,12 +186,14 @@ def gerar_doc_para_aba(xls, aba_nome: str) -> bytes:
     hdr[1].text = "Campo de preenchimento:"
     hdr[2].text = "Evidência"
 
+    # Cabeçalho formatado
     for c in hdr:
         pintar_fundo(c, rgb=(0, 0, 0))
         formatar_celula(c, bold=True, branca=True)
         for p in c.paragraphs:
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
+    # Linhas
     for _, row in dados.iterrows():
         termo = row["Termo"] if row["Termo"] else ""
         campo = row["Campo"] if row["Campo"] else ""
@@ -185,16 +212,15 @@ def gerar_doc_para_aba(xls, aba_nome: str) -> bytes:
     return buffer.getvalue()
 
 
-# ==== INTERFACE ==== #
-
+# ==========================
+# Interface principal
+# ==========================
 uploaded_file = st.file_uploader(
     "Envie o arquivo de parametrização TIC (.xlsx)",
     type=["xlsx"]
 )
 
 if uploaded_file is not None:
-
-    # NOVO CAMPO — Nome da trilha
     nome_trilha = st.text_input(
         "Nome da trilha (usado no nome do arquivo ZIP):",
         placeholder="Ex.: Trilha_IA, TIC_Módulo_3, Material_Senac"
@@ -218,13 +244,12 @@ if uploaded_file is not None:
             if not aba_sel:
                 st.error("Selecione pelo menos uma aba.")
             else:
+                nome_zip_base = nome_trilha.strip() if nome_trilha.strip() else "relatorios_tic"
+                nome_zip = nome_zip_base + ".zip"
 
-                # Se o usuário não escrever nada, criamos um nome padrão
-                nome_zip = nome_trilha.strip() if nome_trilha.strip() else "relatorios_tic"
-                nome_zip += ".zip"
-
-                # ZIP em memória
                 zip_buffer = io.BytesIO()
+                qtd_ok = 0
+
                 with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
                     for aba in aba_sel:
                         doc_bytes = gerar_doc_para_aba(xls, aba)
@@ -232,9 +257,19 @@ if uploaded_file is not None:
                             continue
                         nome_arquivo = f"Tabela_{aba}.docx"
                         zipf.writestr(nome_arquivo, doc_bytes)
+                        qtd_ok += 1
+
                 zip_buffer.seek(0)
 
-                st.success("Relatórios gerados com sucesso!")
+                # registra no histórico
+                registrar_historico(
+                    nome_trilha=nome_trilha.strip() or "(sem nome)",
+                    nome_arquivo_xlsx=uploaded_file.name,
+                    abas=aba_sel,
+                    qtd_relatorios=qtd_ok
+                )
+
+                st.success(f"Relatórios gerados com sucesso! ({qtd_ok} arquivos)")
 
                 st.download_button(
                     label="📥 Baixar ZIP",
@@ -245,3 +280,17 @@ if uploaded_file is not None:
 
 else:
     st.info("Envie o arquivo Excel para começar.")
+
+
+# ==========================
+# Seção de histórico
+# ==========================
+st.markdown("---")
+st.subheader("Histórico de relatórios gerados")
+
+if st.checkbox("Mostrar histórico"):
+    df_hist = pd.read_sql_query("SELECT * FROM historico ORDER BY id DESC", conn)
+    if df_hist.empty:
+        st.info("Ainda não há registros no histórico.")
+    else:
+        st.dataframe(df_hist, use_container_width=True)
