@@ -302,7 +302,13 @@ def configurar_pagina():
         .stButton > button:hover {
             background-color: #F28C28 !important;
             border-color: #F28C28 !important;
-            color: white !important;
+            color: #1C1C1C !important;
+        }
+        .stButton > button:active,
+        .stButton > button:focus {
+            background-color: #F28C28 !important;
+            border-color: #F28C28 !important;
+            color: #1C1C1C !important;
         }
         input[type="text"] {
             border: 2px solid #003F88 !important;
