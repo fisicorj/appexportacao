@@ -306,10 +306,10 @@ def configurar_pagina():
     )
 
 
-@st.cache_data
-def carregar_excel(uploaded_file) -> pd.ExcelFile:
+@st.cache_resource
+def carregar_excel(_uploaded_file) -> pd.ExcelFile:
     """Carrega o arquivo Excel com cache."""
-    return pd.ExcelFile(uploaded_file)
+    return pd.ExcelFile(_uploaded_file)
 
 
 # ==========================
