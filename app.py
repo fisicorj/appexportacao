@@ -14,8 +14,8 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
 
-st.set_page_config(page_title="Gerador de Relatórios TIC", layout="wide")
-st.title("Gerador de Relatórios TIC → Tabelas em Word")
+st.set_page_config(page_title="Gerador de Relatórios", layout="wide")
+st.title("Gerador de Relatórios → Tabelas em Word")
 
 
 # ==== Funções auxiliares ==== #
@@ -37,7 +37,7 @@ def formatar_celula(celula, bold=False, branca=False):
 
 def pintar_fundo(celula, rgb=(0, 0, 0)):
     """Aplica cor de fundo (w:shd) na célula."""
-    cor = "%02X%02X%02X" % rgb  # (0,0,0) -> "000000"
+    cor = "%02X%02X%02X" % rgb  
 
     tc = celula._tc
     tcPr = tc.get_or_add_tcPr()
@@ -53,17 +53,13 @@ def pintar_fundo(celula, rgb=(0, 0, 0)):
 
 
 def gerar_doc_para_aba(xls, aba_nome: str) -> bytes:
-    """Gera um .docx (em bytes) para uma aba específica."""
     df = pd.read_excel(xls, sheet_name=aba_nome, header=None)
 
-    # linha 1 tem os rótulos "Termo a ser preenchido"/"Campo de preenchimento"
     header = df.iloc[1]
-
     try:
         col_termo = header[header.astype(str).str.contains("Termo", case=False)].index[0]
         col_campo = header[header.astype(str).str.contains("Campo", case=False)].index[0]
     except IndexError:
-        # não tem as colunas, não gera nada
         return None
 
     dados = df.iloc[2:, [col_termo, col_campo]].copy()
@@ -74,7 +70,7 @@ def gerar_doc_para_aba(xls, aba_nome: str) -> bytes:
     if dados.empty:
         return None
 
-    # Cria documento em paisagem
+    # Documento paisagem
     doc = Document()
     section = doc.sections[0]
     section.orientation = WD_ORIENT.LANDSCAPE
@@ -97,14 +93,12 @@ def gerar_doc_para_aba(xls, aba_nome: str) -> bytes:
     hdr[1].text = "Campo de preenchimento:"
     hdr[2].text = "Evidência"
 
-    # Cabeçalho: preto, texto branco, Arial 12, centralizado
     for c in hdr:
         pintar_fundo(c, rgb=(0, 0, 0))
         formatar_celula(c, bold=True, branca=True)
         for p in c.paragraphs:
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    # Linhas
     for _, row in dados.iterrows():
         termo = row["Termo"] if row["Termo"] else ""
         campo = row["Campo"] if row["Campo"] else ""
@@ -117,14 +111,13 @@ def gerar_doc_para_aba(xls, aba_nome: str) -> bytes:
         for c in nova:
             formatar_celula(c)
 
-    # Exporta para bytes
     buffer = io.BytesIO()
     doc.save(buffer)
     buffer.seek(0)
     return buffer.getvalue()
 
 
-# ==== Interface Web ==== #
+# ==== INTERFACE ==== #
 
 uploaded_file = st.file_uploader(
     "Envie o arquivo de parametrização TIC (.xlsx)",
@@ -132,6 +125,13 @@ uploaded_file = st.file_uploader(
 )
 
 if uploaded_file is not None:
+
+    # NOVO CAMPO — Nome da trilha
+    nome_trilha = st.text_input(
+        "Nome da trilha (usado no nome do arquivo ZIP):",
+        placeholder="Ex.: Trilha_IA, TIC_Módulo_3, Material_Senac"
+    )
+
     xls = pd.ExcelFile(uploaded_file)
     abas_numericas = [a for a in xls.sheet_names if aba_e_numerica(a)]
 
@@ -146,10 +146,16 @@ if uploaded_file is not None:
         )
 
         if st.button("Gerar relatórios (DOCX)"):
+
             if not aba_sel:
                 st.error("Selecione pelo menos uma aba.")
             else:
-                # Cria um ZIP em memória
+
+                # Se o usuário não escrever nada, criamos um nome padrão
+                nome_zip = nome_trilha.strip() if nome_trilha.strip() else "relatorios_tic"
+                nome_zip += ".zip"
+
+                # ZIP em memória
                 zip_buffer = io.BytesIO()
                 with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
                     for aba in aba_sel:
@@ -163,10 +169,11 @@ if uploaded_file is not None:
                 st.success("Relatórios gerados com sucesso!")
 
                 st.download_button(
-                    label="📥 Baixar ZIP com todos os DOCX",
+                    label="📥 Baixar ZIP",
                     data=zip_buffer,
-                    file_name="relatorios_tic_tabelas.zip",
+                    file_name=nome_zip,
                     mime="application/zip"
                 )
+
 else:
     st.info("Envie o arquivo Excel para começar.")
