@@ -364,18 +364,6 @@ def carregar_excel(_uploaded_file) -> pd.ExcelFile:
 def main():
     configurar_pagina()
     
-    # 🔁 Gatilho de reset pós-download
-    if "resetar_app" not in st.session_state:
-        st.session_state["resetar_app"] = False
-
-    if st.session_state["resetar_app"]:
-        # limpa tudo que é de estado de usuário e reroda
-        for k in list(st.session_state.keys()):
-            if k != "resetar_app":
-                del st.session_state[k]
-        st.session_state["resetar_app"] = False
-        st.rerun()
-    
     # Inicializar repositório de histórico
     historico = HistoricoRepository()
     
@@ -480,10 +468,10 @@ def main():
                             mime="application/zip"
                         )
 
-                        # Após o download, resetar app
+                        # Após download, limpamos o estado e rerodamos o app
                         if clicked:
-                            st.session_state["resetar_app"] = True
-                            st.rerun()
+                            st.session_state.clear()
+                            st.experimental_rerun()
                     else:
                         st.error("❌ Nenhum relatório pôde ser gerado. Verifique a estrutura das abas.")
                         if erros:
@@ -514,7 +502,7 @@ def main():
                 if st.button("🗑️ Limpar histórico", type="secondary"):
                     if historico.limpar_historico():
                         st.success("✅ Histórico limpo com sucesso!")
-                        st.rerun()
+                        st.experimental_rerun()
                     else:
                         st.error("❌ Erro ao limpar histórico")
             
